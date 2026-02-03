@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createGame, getWinner, makeMove } from "./tic-tac-toe";
 
 import "./Table.css";
@@ -6,7 +6,8 @@ import "./Table.css";
 function App() {
   let [gameState, setGameState] = useState(getInitialGame());
 
-  // TODO: display the gameState, and call `makeMove` when a player clicks a button
+  let winner = getWinner(gameState);
+
   return (
     <div>
       <div className="board">
@@ -14,6 +15,7 @@ function App() {
           <div
             key={idx}
             onClick={() => {
+              if (winner) return;
               setGameState(makeMove(gameState, idx));
             }}
           >
@@ -21,9 +23,10 @@ function App() {
           </div>
         ))}
       </div>
-      {getWinner(gameState) != null ? (
+      {winner != null ? (
         <>
-          <h1>{`${getWinner(gameState)} WON BABYYYY`}</h1>
+          <h1>{`${winner} WON BABYYYY`}</h1>
+          <button onClick={() => window.location.reload()}>New Game</button>
         </>
       ) : (
         <p>Hello World! current player: {gameState.currentPlayer}</p>

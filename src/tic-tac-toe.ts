@@ -27,6 +27,10 @@ export function createGame(): GameState {
 export function makeMove(state: GameState, position: number): GameState {
   const currentValue = state.board[position];
 
+  if (getWinner(state)) {
+    throw new Error("Game is already over");
+  }
+
   // Replace the state of the board with the currentPlayer's symbol
 
   if (currentValue != null) {
