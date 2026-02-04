@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { createGame, makeMove, getWinner, GameState, Board } from "./tic-tac-toe";
+import { createGame, makeMove, getWinner } from "./tic-tac-toe";
+import type { GameState } from "./tic-tac-toe";
 
 // Helper: apply a sequence of moves to a fresh game
 function playMoves(...positions: number[]): GameState {
@@ -16,7 +17,17 @@ function playMoves(...positions: number[]): GameState {
 describe("createGame", () => {
   it("returns an empty board", () => {
     const game = createGame();
-    expect(game.board).toEqual([null, null, null, null, null, null, null, null, null]);
+    expect(game.board).toEqual([
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ]);
   });
 
   it("starts with X as the current player", () => {
@@ -61,15 +72,21 @@ describe("makeMove", () => {
   });
 
   it("throws when the position is below 0", () => {
-    expect(() => makeMove(createGame(), -1)).toThrow("Position must be between 0 and 8");
+    expect(() => makeMove(createGame(), -1)).toThrow(
+      "Position must be between 0 and 8",
+    );
   });
 
   it("throws when the position is above 8", () => {
-    expect(() => makeMove(createGame(), 9)).toThrow("Position must be between 0 and 8");
+    expect(() => makeMove(createGame(), 9)).toThrow(
+      "Position must be between 0 and 8",
+    );
   });
 
   it("throws when the position is not an integer", () => {
-    expect(() => makeMove(createGame(), 1.5)).toThrow("Position must be an integer");
+    expect(() => makeMove(createGame(), 1.5)).toThrow(
+      "Position must be an integer",
+    );
   });
 
   it("throws when the game is already won", () => {
