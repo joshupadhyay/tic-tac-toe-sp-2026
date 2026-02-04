@@ -1,4 +1,4 @@
-import type { GameState } from "../tic-tac-toe";
+import type { GameState } from "../types";
 
 export interface TableProps extends GameState {
   onCellClick: (idx: number) => void;

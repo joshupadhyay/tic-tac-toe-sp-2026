@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  createGame,
-  getWinner,
-  makeMove,
-  switchPlayer,
-  type GameState,
-  type Player,
-} from "./tic-tac-toe";
+import { getWinner } from "./tic-tac-toe";
+import type { GameState } from "./types";
 import "./index.css";
 import { TicTacToeTable } from "./components/Table";
 import { NewGameButton } from "./components/NewGame";

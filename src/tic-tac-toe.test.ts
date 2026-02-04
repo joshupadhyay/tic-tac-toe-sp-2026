@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { createGame, makeMove, getWinner } from "./tic-tac-toe";
-import type { GameState } from "./tic-tac-toe";
+import { makeMove, getWinner } from "./tic-tac-toe";
+import type { GameState } from "./types";
+import { fetchNewGame } from "./App";
 
 // Helper: apply a sequence of moves to a fresh game
-function playMoves(...positions: number[]): GameState {
-  let state = createGame();
+async function playMoves(...positions: number[]): Promise<GameState> {
+  let state = await fetchNewGame();
   for (const pos of positions) {
     state = makeMove(state, pos);
   }
@@ -15,8 +16,8 @@ function playMoves(...positions: number[]): GameState {
 // createGame
 // ---------------------------------------------------------------------------
 describe("createGame", () => {
-  it("returns an empty board", () => {
-    const game = createGame();
+  it("returns an empty board", async () => {
+    const game = await fetchNewGame();
     expect(game.board).toEqual([
       null,
       null,
@@ -30,8 +31,8 @@ describe("createGame", () => {
     ]);
   });
 
-  it("starts with X as the current player", () => {
-    const game = createGame();
+  it("starts with X as the current player", async () => {
+    const game = await fetchNewGame();
     expect(game.currentPlayer).toBe("X");
   });
 });
@@ -40,18 +41,18 @@ describe("createGame", () => {
 // makeMove
 // ---------------------------------------------------------------------------
 describe("makeMove", () => {
-  it("places the current player's mark on the board", () => {
-    const state = makeMove(createGame(), 0);
+  it("places the current player's mark on the board", async () => {
+    const state = makeMove(await fetchNewGame(), 0);
     expect(state.board[0]).toBe("X");
   });
 
-  it("switches the current player after a move", () => {
-    const state = makeMove(createGame(), 0);
+  it("switches the current player after a move", async () => {
+    const state = makeMove(await fetchNewGame(), 0);
     expect(state.currentPlayer).toBe("O");
   });
 
-  it("alternates players across multiple moves", () => {
-    const state = playMoves(0, 1, 2);
+  it("alternates players across multiple moves", async () => {
+    const state = await playMoves(0, 1, 2);
     // X moved at 0, O moved at 1, X moved at 2
     expect(state.board[0]).toBe("X");
     expect(state.board[1]).toBe("O");
@@ -59,39 +60,39 @@ describe("makeMove", () => {
     expect(state.currentPlayer).toBe("O");
   });
 
-  it("does not mutate the original state", () => {
-    const original = createGame();
+  it("does not mutate the original state", async () => {
+    const original = await fetchNewGame();
     const next = makeMove(original, 4);
     expect(original.board[4]).toBeNull();
     expect(next.board[4]).toBe("X");
   });
 
-  it("throws when the position is already occupied", () => {
-    const state = makeMove(createGame(), 0);
+  it("throws when the position is already occupied", async () => {
+    const state = makeMove(await fetchNewGame(), 0);
     expect(() => makeMove(state, 0)).toThrow("Position is already occupied");
   });
 
   it("throws when the position is below 0", () => {
-    expect(() => makeMove(createGame(), -1)).toThrow(
+    expect(async () => makeMove(await fetchNewGame(), -1)).toThrow(
       "Position must be between 0 and 8",
     );
   });
 
   it("throws when the position is above 8", () => {
-    expect(() => makeMove(createGame(), 9)).toThrow(
+    expect(async () => makeMove(await fetchNewGame(), 9)).toThrow(
       "Position must be between 0 and 8",
     );
   });
 
   it("throws when the position is not an integer", () => {
-    expect(() => makeMove(createGame(), 1.5)).toThrow(
+    expect(async () => makeMove(await fetchNewGame(), 1.5)).toThrow(
       "Position must be an integer",
     );
   });
 
-  it("throws when the game is already won", () => {
+  it("throws when the game is already won", async () => {
     // X wins with top row: X(0), O(3), X(1), O(4), X(2)
-    const state = playMoves(0, 3, 1, 4, 2);
+    const state = await playMoves(0, 3, 1, 4, 2);
     expect(() => makeMove(state, 8)).toThrow("Game is already over");
   });
 });
@@ -100,13 +101,13 @@ describe("makeMove", () => {
 // getWinner
 // ---------------------------------------------------------------------------
 describe("getWinner", () => {
-  it("returns undefined for an empty board", () => {
-    expect(getWinner(createGame())).toBeUndefined();
+  it("returns undefined for an empty board", async () => {
+    expect(getWinner(await fetchNewGame())).toBeUndefined();
   });
 
   it("returns undefined when no one has won yet", () => {
     // X(0), O(4)
-    const state = playMoves(0, 4);
+    const state = await playMoves(0, 4);
     expect(getWinner(state)).toBeUndefined();
   });
 
@@ -187,7 +188,7 @@ describe("getWinner", () => {
 // ---------------------------------------------------------------------------
 describe("full game sequences", () => {
   it("plays a complete game where X wins", () => {
-    let state = createGame();
+    let state = await fetchNewGame();
 
     state = makeMove(state, 4); // X center
     expect(state.currentPlayer).toBe("O");
@@ -216,7 +217,7 @@ describe("full game sequences", () => {
   });
 
   it("preserves immutability through a full game", () => {
-    const states: GameState[] = [createGame()];
+    const states: GameState[] = [await fetchNewGame()];
     // X(4), O(0), X(1), O(3), X(7) — X wins middle column
     const moves = [4, 0, 1, 3, 7];
 
