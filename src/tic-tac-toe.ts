@@ -16,6 +16,13 @@ export type GameState = {
   currentPlayer: Player;
 };
 
+export function createGame(): GameState {
+  return {
+    board: [null, null, null, null, null, null, null, null, null],
+    currentPlayer: "X",
+  };
+}
+
 // makeMove should get the existing state of the cell, and adjust with the Player's symbol
 export function makeMove(state: GameState, position: number): GameState {
   const currentValue = state.board[position];
