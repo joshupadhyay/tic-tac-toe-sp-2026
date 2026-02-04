@@ -1,11 +1,28 @@
-import { useState } from "react";
-import { createGame, getWinner, makeMove } from "./tic-tac-toe";
+import { useEffect, useState } from "react";
+import {
+  createGame,
+  getWinner,
+  makeMove,
+  switchPlayer,
+  type GameState,
+  type Player,
+} from "./tic-tac-toe";
 import "./index.css";
 import { TicTacToeTable } from "./components/Table";
 import { NewGameButton } from "./components/NewGame";
 
 function App() {
-  let [gameState, setGameState] = useState(getInitialGame());
+  let [gameState, setGameState] = useState<GameState>({
+    board: [null, null, null, null, null, null, null, null, null],
+    currentPlayer: "X",
+  });
+
+  // Fetch initial gameState on mount
+  useEffect(() => {
+    fetchNewGame().then((newGameState: GameState) => {
+      setGameState(newGameState);
+    });
+  }, []);
 
   let winnerInfo = getWinner(gameState);
 
@@ -21,7 +38,11 @@ function App() {
           currentPlayer={gameState.currentPlayer}
           onCellClick={(idx) => {
             if (winnerInfo?.winner) return;
-            setGameState(makeMove(gameState, idx));
+
+            moveAPICall(idx).then((newState: GameState) => {
+              console.log("New state from server:", newState);
+              setGameState(newState);
+            });
           }}
           winningPositions={winnerInfo?.winningPositions}
         />
@@ -29,16 +50,27 @@ function App() {
       {winnerInfo?.winner ? null : (
         <p>current player: {gameState.currentPlayer}</p>
       )}
-      <NewGameButton winner={winnerInfo?.winner} />
+      <NewGameButton winner={winnerInfo?.winner} newGameClick={setGameState} />
     </div>
   );
 }
 
-function getInitialGame() {
-  let initialGameState = createGame();
-  initialGameState = makeMove(initialGameState, 3);
-  initialGameState = makeMove(initialGameState, 0);
-  return initialGameState;
+export async function fetchNewGame() {
+  const response = await fetch("/game");
+  const data = await response.json();
+  return data;
+}
+
+async function moveAPICall(idx: number) {
+  const response = await fetch("/move", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ index: idx }),
+  });
+  const data = await response.json();
+  return data;
 }
 
 export default App;
