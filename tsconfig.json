@@ -1,4 +1,7 @@
 {
+  "compilerOptions": {
+    "types": ["bun"]
+  },
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },

@@ -1,18 +1,18 @@
-import { describe, it, expect, beforeEach, mock } from "bun:test";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { makeMove, getWinner, createGame } from "./tic-tac-toe";
 import type { GameState } from "./types";
 import { fetchNewGame } from "./App";
 
 // Mock fetch globally
 beforeEach(() => {
-  globalThis.fetch = mock((url: string) => {
+  globalThis.fetch = vi.fn((url: string) => {
     if (url === "/game") {
       return Promise.resolve({
         json: () => Promise.resolve(createGame()),
       });
     }
     return Promise.reject(new Error(`Unknown URL: ${url}`));
-  }) as typeof fetch;
+  }) as unknown as typeof fetch;
 });
 
 // Helper: apply a sequence of moves to a fresh game
