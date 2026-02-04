@@ -65,6 +65,11 @@ export function makeMove(state: GameState, position: number): GameState {
   };
 }
 
+/**
+ * Checks if a winner exists. If so, return the winning Player symbol
+ * @param state
+ * @returns
+ */
 export function getWinner(state: GameState): Player | null {
   if (winDetection(state)) {
     // since we ret

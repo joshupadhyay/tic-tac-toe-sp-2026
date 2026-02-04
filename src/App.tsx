@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { createGame, getWinner, makeMove } from "./tic-tac-toe";
-
-import "./Table.css";
+import "./index.css";
+import { TicTacToeTable } from "./components/Table";
+import { NewGameButton } from "./components/NewGame";
 
 function App() {
   let [gameState, setGameState] = useState(getInitialGame());
@@ -9,28 +10,23 @@ function App() {
   let winner = getWinner(gameState);
 
   return (
-    <div>
-      <div className="board">
-        {gameState.board.map((cell, idx) => (
-          <div
-            key={idx}
-            onClick={() => {
-              if (winner) return;
-              setGameState(makeMove(gameState, idx));
-            }}
-          >
-            {cell}
-          </div>
-        ))}
+    <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+      <div className="text-lg text-shadow-2xs">Tic Tac Toe</div>
+      <div className="text-justify-left">
+        ruin friendships and familial ties
       </div>
-      {winner != null ? (
-        <>
-          <h1>{`${winner} WON BABYYYY`}</h1>
-          <button onClick={() => window.location.reload()}>New Game</button>
-        </>
-      ) : (
-        <p>Hello World! current player: {gameState.currentPlayer}</p>
-      )}
+      <div>
+        <TicTacToeTable
+          board={gameState.board}
+          currentPlayer={gameState.currentPlayer}
+          onCellClick={(idx) => {
+            if (winner) return;
+            setGameState(makeMove(gameState, idx));
+          }}
+        />
+      </div>
+      {winner ? null : <p>current player: {gameState.currentPlayer}</p>}
+      <NewGameButton winner={winner} />
     </div>
   );
 }
