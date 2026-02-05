@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import type { GameState } from "../types";
 import { TicTacToeTable } from "./Table";
 import { moveAPICall } from "../App";
@@ -28,19 +28,23 @@ export function GamePage(gameprops: IGamePageProps) {
 
   async function updateTable(id: UUID, idx: number) {
     let newState = await moveAPICall(id, idx);
-    console.log(`updating ${gameId}`);
     setGameState(newState);
   }
 
   return (
-    <TicTacToeTable
-      board={gameState.board}
-      currentPlayer={gameState.currentPlayer}
-      // we only need to expose idx in Table, as we pass gameId right here...
-      onCellClick={(idx: number) => {
-        updateTable(gameId as UUID, idx);
-      }}
-      winningPositions={gameprops.winner?.winningPositions}
-    />
+    <div>
+      <TicTacToeTable
+        board={gameState.board}
+        currentPlayer={gameState.currentPlayer}
+        // we only need to expose idx in Table, as we pass gameId right here...
+        onCellClick={(idx: number) => {
+          updateTable(gameId as UUID, idx);
+        }}
+        winningPositions={gameprops.winner?.winningPositions}
+      />
+      <button>
+        <Link to="/"> Back</Link>
+      </button>
+    </div>
   );
 }

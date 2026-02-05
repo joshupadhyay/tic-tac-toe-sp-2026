@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { fetchNewGame } from "../App";
 import type { GameState, Player } from "../types";
 

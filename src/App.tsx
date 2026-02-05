@@ -7,6 +7,7 @@ import { NewGameButton } from "./components/NewGame";
 import type { UUID } from "crypto";
 import { BrowserRouter, Link, Route, Router, Routes } from "react-router-dom";
 import { GamePage } from "./components/GamePage";
+import { DisplayActiveGames } from "./components/DisplayActiveGames";
 
 export default function App() {
   let [gameState, setGameState] = useState<GameState>({
@@ -37,6 +38,7 @@ export default function App() {
           ></Route>
         </Routes>
         <NewGameButton />
+        <DisplayActiveGames />
       </div>
     </BrowserRouter>
   );
@@ -105,4 +107,10 @@ export async function getActiveGames() {
   const data: Pick<GameState, "gameId">[] = await resp.json();
 
   return data;
+}
+
+export async function getGame(gameId: UUID) {
+  const resp = await fetch(`/api/game/${gameId}`);
+
+  return await resp.json();
 }
