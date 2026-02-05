@@ -1,0 +1,46 @@
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import type { GameState } from "../types";
+import { TicTacToeTable } from "./Table";
+import { moveAPICall } from "../App";
+import type { WinnerData } from "../tic-tac-toe";
+import type { UUID } from "crypto";
+
+export interface IGamePageProps {
+  winner?: WinnerData;
+}
+
+export function GamePage(gameprops: IGamePageProps) {
+  const { gameId } = useParams();
+  const [gameState, setGameState] = useState<GameState>();
+
+  useEffect(() => {
+    const res = fetch(`/api/game/${gameId}`)
+      .then((res) => res.json())
+      .then((data) => setGameState(data.gameState));
+  }, [gameId]);
+
+  // Don't render until data is loaded
+  // This can be fixed with useFetcher, or useLoaderData, but I'll ignore for now..
+  if (!gameState) {
+    return <div>Loading...</div>;
+  }
+
+  async function updateTable(id: UUID, idx: number) {
+    let newState = await moveAPICall(id, idx);
+    console.log(`updating ${gameId}`);
+    setGameState(newState);
+  }
+
+  return (
+    <TicTacToeTable
+      board={gameState.board}
+      currentPlayer={gameState.currentPlayer}
+      // we only need to expose idx in Table, as we pass gameId right here...
+      onCellClick={(idx: number) => {
+        updateTable(gameId as UUID, idx);
+      }}
+      winningPositions={gameprops.winner?.winningPositions}
+    />
+  );
+}

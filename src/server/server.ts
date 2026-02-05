@@ -37,7 +37,7 @@ app.get("/game", (_, res) => {
 /**
  * Create a new game. Use a UUID as the game ID, store game state
  */
-app.post("/newgame", (_, res) => {
+app.post("/api/newgame", (_, res) => {
   // create a new game with a unique ID
   const gameId = crypto.randomUUID();
   GAME_MAP.set(gameId, DEFAULT_GAME_STATE);
@@ -48,7 +48,7 @@ app.post("/newgame", (_, res) => {
 /**
  * Get a particular game by its unique ID, or throw error if not found
  */
-app.get("/game/:gameId", (req, res) => {
+app.get("/api/game/:gameId", (req, res) => {
   const { gameId } = req.params;
   const gameState = GAME_MAP.get(gameId);
 
@@ -62,7 +62,7 @@ app.get("/game/:gameId", (req, res) => {
 /**
  * Update game state with a move. Return updated game state.
  */
-app.post("/move/:gameID", (req, res) => {
+app.post("/api/move/:gameID", (req, res) => {
   const { gameID } = req.params;
   const { index } = req.body;
   const gameState = GAME_MAP.get(gameID);
@@ -81,7 +81,7 @@ app.post("/move/:gameID", (req, res) => {
  * List all active games by their game IDs
  * Filter by active Games
  */
-app.get("/listgames", (_, res) => {
+app.get("/api/listgames", (_, res) => {
   const validGameIds: string[] = [];
 
   // needed claude to help do this. Filter to display only active games
@@ -97,7 +97,7 @@ app.get("/listgames", (_, res) => {
 /**
  * Delete a game by its ID
  */
-app.delete("/game/:gameID", (req, res) => {
+app.delete("/api/game/:gameID", (req, res) => {
   const { gameID } = req.params;
   if (GAME_MAP.has(gameID)) {
     GAME_MAP.delete(gameID);

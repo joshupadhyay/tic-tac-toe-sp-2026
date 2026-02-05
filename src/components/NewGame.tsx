@@ -2,14 +2,7 @@ import { useNavigate } from "react-router";
 import { fetchNewGame } from "../App";
 import type { GameState, Player } from "../types";
 
-export interface NewGameButtonProps {
-  winner?: Player; // optional
-  newGameClick: (gamestate: GameState) => void;
-}
-
-export function NewGameButton(props: NewGameButtonProps) {
-  props.winner;
-
+export function NewGameButton() {
   const navigate = useNavigate();
 
   const getNewGame = async () => {

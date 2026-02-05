@@ -5,7 +5,8 @@ import "./index.css";
 import { TicTacToeTable } from "./components/Table";
 import { NewGameButton } from "./components/NewGame";
 import type { UUID } from "crypto";
-import { BrowserRouter, Link, Router } from "react-router-dom";
+import { BrowserRouter, Link, Route, Router, Routes } from "react-router-dom";
+import { GamePage } from "./components/GamePage";
 
 export default function App() {
   let [gameState, setGameState] = useState<GameState>({
@@ -29,48 +30,21 @@ export default function App() {
         <div className="text-justify-center text-sm">
           ruin friendships and familial ties
         </div>
-        <div>
-          <TicTacToeTable
-            board={gameState.board}
-            currentPlayer={gameState.currentPlayer}
-            onCellClick={(idx) => {
-              if (winnerInfo?.winner) return;
-
-              // moveAPICall2(idx).then((newState: GameState) => {
-              //   console.log("New state from server:", newState);
-              //   setGameState(newState);
-              // });
-            }}
-            winningPositions={winnerInfo?.winningPositions}
-          />
-        </div>
-        {winnerInfo?.winner ? null : (
-          <p>current player: {gameState.currentPlayer}</p>
-        )}
-        <NewGameButton
-          winner={winnerInfo?.winner}
-          newGameClick={setGameState}
-        />
+        <Routes>
+          <Route
+            path="/game/:gameId"
+            element={<GamePage winner={winnerInfo} />}
+          ></Route>
+        </Routes>
+        <NewGameButton />
       </div>
     </BrowserRouter>
   );
 }
 
 export async function fetchNewGame(): Promise<GameState> {
-  const response = await fetch("/newgame", {
+  const response = await fetch("/api/newgame", {
     method: "POST",
-  });
-  const data = await response.json();
-  return data;
-}
-
-async function moveAPICall(idx: number) {
-  const response = await fetch("/move", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ index: idx }),
   });
   const data = await response.json();
   return data;
@@ -81,7 +55,7 @@ async function moveAPICall(idx: number) {
  * @returns new GameState with gameID
  */
 export async function newGameCall(): Promise<GameState> {
-  const response = await fetch("/newgame", {
+  const response = await fetch("/api/newgame", {
     method: "GET",
   });
 
@@ -90,8 +64,8 @@ export async function newGameCall(): Promise<GameState> {
   return data;
 }
 
-export async function moveAPICall2(uuid: UUID, idx: number) {
-  const resp = await fetch(`/move/${uuid}`, {
+export async function moveAPICall(gameId: UUID, idx: number) {
+  const resp = await fetch(`/api/move/${gameId}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -103,7 +77,7 @@ export async function moveAPICall2(uuid: UUID, idx: number) {
 }
 
 export async function getAllGames() {
-  const resp = await fetch(`/listgames`, {
+  const resp = await fetch(`/api/listgames`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -126,7 +100,7 @@ export async function toLobby() {
  */
 
 export async function getActiveGames() {
-  const resp = await fetch("/listgames");
+  const resp = await fetch("/api/listgames");
 
   const data: Pick<GameState, "gameId">[] = await resp.json();
 
