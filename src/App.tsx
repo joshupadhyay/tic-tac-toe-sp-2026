@@ -5,8 +5,11 @@ import "./index.css";
 import { TicTacToeTable } from "./components/Table";
 import { NewGameButton } from "./components/NewGame";
 import type { UUID } from "crypto";
+import { BrowserRouter, Link, Route, Router, Routes } from "react-router-dom";
+import { GamePage } from "./components/GamePage";
+import { DisplayActiveGames } from "./components/DisplayActiveGames";
 
-function App() {
+export default function App() {
   let [gameState, setGameState] = useState<GameState>({
     board: [null, null, null, null, null, null, null, null, null],
     currentPlayer: "X",
@@ -14,7 +17,7 @@ function App() {
 
   // Fetch initial gameState on mount
   useEffect(() => {
-    fetchNewGame().then((newGameState: GameState) => {
+    newGameCall().then((newGameState: GameState) => {
       setGameState(newGameState);
     });
   }, []);
@@ -22,60 +25,39 @@ function App() {
   let winnerInfo = getWinner(gameState);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-      <div className="text-4xl text-shadow-2xs">Tic Tac Toe</div>
-      <div className="text-justify-center text-sm">
-        ruin friendships and familial ties
+    <BrowserRouter>
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <div className="text-4xl text-shadow-2xs">Tic Tac Toe</div>
+        <div className="text-justify-center text-sm">
+          ruin friendships and familial ties
+        </div>
+        <Routes>
+          <Route
+            path="/game/:gameId"
+            element={<GamePage winner={winnerInfo} />}
+          ></Route>
+        </Routes>
+        <NewGameButton />
+        <DisplayActiveGames />
       </div>
-      <div>
-        <TicTacToeTable
-          board={gameState.board}
-          currentPlayer={gameState.currentPlayer}
-          onCellClick={(idx) => {
-            if (winnerInfo?.winner) return;
-
-            moveAPICall(idx).then((newState: GameState) => {
-              console.log("New state from server:", newState);
-              setGameState(newState);
-            });
-          }}
-          winningPositions={winnerInfo?.winningPositions}
-        />
-      </div>
-      {winnerInfo?.winner ? null : (
-        <p>current player: {gameState.currentPlayer}</p>
-      )}
-      <NewGameButton winner={winnerInfo?.winner} newGameClick={setGameState} />
-    </div>
+    </BrowserRouter>
   );
 }
 
-export async function fetchNewGame() {
-  const response = await fetch("/game");
-  const data = await response.json();
-  return data;
-}
-
-async function moveAPICall(idx: number) {
-  const response = await fetch("/move", {
+export async function fetchNewGame(): Promise<GameState> {
+  const response = await fetch("/api/newgame", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ index: idx }),
   });
   const data = await response.json();
   return data;
 }
-
-export default App;
 
 /**
  *
  * @returns new GameState with gameID
  */
 export async function newGameCall(): Promise<GameState> {
-  const response = await fetch("/newgame", {
+  const response = await fetch("/api/newgame", {
     method: "GET",
   });
 
@@ -84,8 +66,8 @@ export async function newGameCall(): Promise<GameState> {
   return data;
 }
 
-export async function moveAPICall2(uuid: UUID, idx: number) {
-  const resp = await fetch(`/move/${uuid}`, {
+export async function moveAPICall(gameId: UUID, idx: number) {
+  const resp = await fetch(`/api/move/${gameId}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -97,7 +79,7 @@ export async function moveAPICall2(uuid: UUID, idx: number) {
 }
 
 export async function getAllGames() {
-  const resp = await fetch(`/listgames`, {
+  const resp = await fetch(`/api/listgames`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -120,9 +102,15 @@ export async function toLobby() {
  */
 
 export async function getActiveGames() {
-  const resp = await fetch("/listgames");
+  const resp = await fetch("/api/listgames");
 
   const data: Pick<GameState, "gameId">[] = await resp.json();
 
   return data;
+}
+
+export async function getGame(gameId: UUID) {
+  const resp = await fetch(`/api/game/${gameId}`);
+
+  return await resp.json();
 }

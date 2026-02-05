@@ -1,13 +1,12 @@
 import express from "express";
 import ViteExpress from "vite-express";
-import { makeMove } from "../tic-tac-toe.ts";
-import type { GameState, IGameMap } from "../types.ts";
-import type { UUID } from "crypto";
+import type { GameState } from "../types.ts";
+import { makeMove } from "./accessory.ts";
 
 export const app = express();
 app.use(express.json());
 
-export const GAME_MAP: IGameMap = new Map<string, GameState>();
+export const GAME_MAP = new Map<string, GameState>();
 
 export const DEFAULT_GAME_STATE: GameState = {
   // truly blank game state
@@ -33,56 +32,23 @@ app.get("/game", (_, res) => {
   });
 });
 
-// WILL BE DEPRECATED SOON
-app.post("/move", (req, res) => {
-  const index = req.body.index as number;
-  // and then we update the game state on the server (refactor this, no need to assign back to itself)
-  serverGameState = makeMove(serverGameState, index);
-
-  // return new state and player
-  res.json({
-    board: serverGameState.board,
-    currentPlayer: serverGameState.currentPlayer,
-  });
-});
-
-/**
- * A player is making a move. Update the game state and return the new state.
- */
-app.post("/move/:gameId", (req, res) => {
-  // in the POST request, we submit the index that the user clicks
-
-  const index = req.body.index as number;
-
-  const gameId = req.params.gameId as UUID;
-
-  // and then we update the game state on the server (refactor this, no need to assign back to itself)
-  serverGameState = makeMove(serverGameState, index);
-
-  // return new state and player
-  res.json({
-    board: serverGameState.board,
-    currentPlayer: serverGameState.currentPlayer,
-  });
-});
-
 ///// for multiplayer – Let's build these functions first before replacing the ones above
 
 /**
  * Create a new game. Use a UUID as the game ID, store game state
  */
-app.post("/newgame", (_, res) => {
+app.post("/api/newgame", (_, res) => {
   // create a new game with a unique ID
-  const gameID = crypto.randomUUID();
-  GAME_MAP.set(gameID, DEFAULT_GAME_STATE);
+  const gameId = crypto.randomUUID();
+  GAME_MAP.set(gameId, DEFAULT_GAME_STATE);
 
-  res.json({ gameID, ...DEFAULT_GAME_STATE });
+  return res.json({ gameId, ...DEFAULT_GAME_STATE });
 });
 
 /**
  * Get a particular game by its unique ID, or throw error if not found
  */
-app.get("/game/:gameId", (req, res) => {
+app.get("/api/game/:gameId", (req, res) => {
   const { gameId } = req.params;
   const gameState = GAME_MAP.get(gameId);
 
@@ -96,7 +62,7 @@ app.get("/game/:gameId", (req, res) => {
 /**
  * Update game state with a move. Return updated game state.
  */
-app.post("/move/:gameID", (req, res) => {
+app.post("/api/move/:gameID", (req, res) => {
   const { gameID } = req.params;
   const { index } = req.body;
   const gameState = GAME_MAP.get(gameID);
@@ -104,7 +70,6 @@ app.post("/move/:gameID", (req, res) => {
   if (!gameState) {
     return res.status(404).json({ error: "Game not found" });
   }
-
   const updatedGameState = makeMove(gameState, index);
 
   GAME_MAP.set(gameID, updatedGameState);
@@ -116,10 +81,15 @@ app.post("/move/:gameID", (req, res) => {
  * List all active games by their game IDs
  * Filter by active Games
  */
-app.get("/listgames", (_, res) => {
-  const validGameIds = Array.from(GAME_MAP)
-    .filter(([_, gameState]) => !gameState.inActive)
-    .map(([gameID, _]) => gameID);
+app.get("/api/listgames", (_, res) => {
+  const validGameIds: string[] = [];
+
+  // needed claude to help do this. Filter to display only active games
+  for (const [gameID, gameState] of GAME_MAP) {
+    if (!gameState.inActive) {
+      validGameIds.push(gameID);
+    }
+  }
 
   res.json({ games: Array.from(validGameIds) });
 });
@@ -127,7 +97,7 @@ app.get("/listgames", (_, res) => {
 /**
  * Delete a game by its ID
  */
-app.delete("/game/:gameID", (req, res) => {
+app.delete("/api/game/:gameID", (req, res) => {
   const { gameID } = req.params;
   if (GAME_MAP.has(gameID)) {
     GAME_MAP.delete(gameID);
