@@ -4,6 +4,7 @@ import type { GameState } from "./types";
 import "./index.css";
 import { TicTacToeTable } from "./components/Table";
 import { NewGameButton } from "./components/NewGame";
+import type { UUID } from "crypto";
 
 function App() {
   let [gameState, setGameState] = useState<GameState>({
@@ -68,3 +69,60 @@ async function moveAPICall(idx: number) {
 }
 
 export default App;
+
+/**
+ *
+ * @returns new GameState with gameID
+ */
+export async function newGameCall(): Promise<GameState> {
+  const response = await fetch("/newgame", {
+    method: "GET",
+  });
+
+  const data = await response.json();
+
+  return data;
+}
+
+export async function moveAPICall2(uuid: UUID, idx: number) {
+  const resp = await fetch(`/move/${uuid}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ index: idx }),
+  });
+
+  return resp.json();
+}
+
+export async function getAllGames() {
+  const resp = await fetch(`/listgames`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  return await resp.json();
+}
+
+export async function toLobby() {
+  // claude I want to navigate to the homepage.
+  const resp = await fetch("/");
+
+  return resp.json();
+}
+
+/**
+ *
+ * @returns list of gameIDs for all active games.
+ */
+
+export async function getActiveGames() {
+  const resp = await fetch("/listgames");
+
+  const data: Pick<GameState, "gameId">[] = await resp.json();
+
+  return data;
+}

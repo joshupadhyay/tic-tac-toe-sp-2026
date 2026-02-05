@@ -1,5 +1,5 @@
 import { fetchNewGame } from "../App";
-import type { GameState, Player } from "../tic-tac-toe";
+import type { GameState, Player } from "../types";
 
 export interface NewGameButtonProps {
   winner?: Player; // optional
