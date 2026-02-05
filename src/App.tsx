@@ -5,8 +5,9 @@ import "./index.css";
 import { TicTacToeTable } from "./components/Table";
 import { NewGameButton } from "./components/NewGame";
 import type { UUID } from "crypto";
+import { BrowserRouter, Link, Router } from "react-router-dom";
 
-function App() {
+export default function App() {
   let [gameState, setGameState] = useState<GameState>({
     board: [null, null, null, null, null, null, null, null, null],
     currentPlayer: "X",
@@ -14,7 +15,7 @@ function App() {
 
   // Fetch initial gameState on mount
   useEffect(() => {
-    fetchNewGame().then((newGameState: GameState) => {
+    newGameCall().then((newGameState: GameState) => {
       setGameState(newGameState);
     });
   }, []);
@@ -22,36 +23,43 @@ function App() {
   let winnerInfo = getWinner(gameState);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-      <div className="text-4xl text-shadow-2xs">Tic Tac Toe</div>
-      <div className="text-justify-center text-sm">
-        ruin friendships and familial ties
-      </div>
-      <div>
-        <TicTacToeTable
-          board={gameState.board}
-          currentPlayer={gameState.currentPlayer}
-          onCellClick={(idx) => {
-            if (winnerInfo?.winner) return;
+    <BrowserRouter>
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <div className="text-4xl text-shadow-2xs">Tic Tac Toe</div>
+        <div className="text-justify-center text-sm">
+          ruin friendships and familial ties
+        </div>
+        <div>
+          <TicTacToeTable
+            board={gameState.board}
+            currentPlayer={gameState.currentPlayer}
+            onCellClick={(idx) => {
+              if (winnerInfo?.winner) return;
 
-            moveAPICall(idx).then((newState: GameState) => {
-              console.log("New state from server:", newState);
-              setGameState(newState);
-            });
-          }}
-          winningPositions={winnerInfo?.winningPositions}
+              // moveAPICall2(idx).then((newState: GameState) => {
+              //   console.log("New state from server:", newState);
+              //   setGameState(newState);
+              // });
+            }}
+            winningPositions={winnerInfo?.winningPositions}
+          />
+        </div>
+        {winnerInfo?.winner ? null : (
+          <p>current player: {gameState.currentPlayer}</p>
+        )}
+        <NewGameButton
+          winner={winnerInfo?.winner}
+          newGameClick={setGameState}
         />
       </div>
-      {winnerInfo?.winner ? null : (
-        <p>current player: {gameState.currentPlayer}</p>
-      )}
-      <NewGameButton winner={winnerInfo?.winner} newGameClick={setGameState} />
-    </div>
+    </BrowserRouter>
   );
 }
 
-export async function fetchNewGame() {
-  const response = await fetch("/game");
+export async function fetchNewGame(): Promise<GameState> {
+  const response = await fetch("/newgame", {
+    method: "POST",
+  });
   const data = await response.json();
   return data;
 }
@@ -67,8 +75,6 @@ async function moveAPICall(idx: number) {
   const data = await response.json();
   return data;
 }
-
-export default App;
 
 /**
  *

@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router";
 import { fetchNewGame } from "../App";
 import type { GameState, Player } from "../types";
 
@@ -9,25 +10,24 @@ export interface NewGameButtonProps {
 export function NewGameButton(props: NewGameButtonProps) {
   props.winner;
 
+  const navigate = useNavigate();
+
+  const getNewGame = async () => {
+    const { gameId } = await fetchNewGame();
+
+    console.log(`new game ID, ${gameId}`);
+
+    navigate(`/game/${gameId}`);
+  };
+
   return (
     <div>
-      {props.winner ? (
-        <>
-          <p className="text-5xl animate-[bounce_2s_infinite]">{`${props.winner} WON BABY`}</p>
-          <button
-            className="bg-amber-600 rounded-lg px-4 py-2 justify-center mx-auto-block"
-            onClick={async () => {
-              props.newGameClick(
-                await fetchNewGame().then(
-                  (newGameState: GameState) => newGameState,
-                ),
-              );
-            }}
-          >
-            New Game
-          </button>
-        </>
-      ) : null}
+      <button
+        className="bg-amber-600 rounded-lg px-4 py-2 justify-center mx-auto-block"
+        onClick={getNewGame}
+      >
+        New Game
+      </button>
     </div>
   );
 }
