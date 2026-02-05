@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { makeMove, getWinner, createGame } from "./tic-tac-toe";
+import { makeMove, getWinner } from "./tic-tac-toe";
 import type { GameState } from "./types";
 import { fetchNewGame } from "./App";
 
@@ -8,7 +8,11 @@ beforeEach(() => {
   globalThis.fetch = vi.fn((url: string) => {
     if (url === "/game") {
       return Promise.resolve({
-        json: () => Promise.resolve(createGame()),
+        json: () =>
+          Promise.resolve({
+            board: [null, null, null, null, null, null, null, null, null],
+            currentPlayer: "X",
+          } as GameState),
       });
     }
     return Promise.reject(new Error(`Unknown URL: ${url}`));
@@ -23,31 +27,6 @@ async function playMoves(...positions: number[]): Promise<GameState> {
   }
   return state;
 }
-
-// ---------------------------------------------------------------------------
-// createGame
-// ---------------------------------------------------------------------------
-describe("createGame", () => {
-  it("returns an empty board", async () => {
-    const game = await fetchNewGame();
-    expect(game.board).toEqual([
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-    ]);
-  });
-
-  it("starts with X as the current player", async () => {
-    const game = await fetchNewGame();
-    expect(game.currentPlayer).toBe("X");
-  });
-});
 
 // ---------------------------------------------------------------------------
 // makeMove
@@ -85,21 +64,18 @@ describe("makeMove", () => {
   });
 
   it("throws when the position is below 0", async () => {
-    expect(() => makeMove(createGame(), -1)).toThrow(
-      "Position must be between 0 and 8",
-    );
+    const state = await fetchNewGame();
+    expect(() => makeMove(state, -1)).toThrow("Position must be between 0 and 8");
   });
 
   it("throws when the position is above 8", async () => {
-    expect(() => makeMove(createGame(), 9)).toThrow(
-      "Position must be between 0 and 8",
-    );
+    const state = await fetchNewGame();
+    expect(() => makeMove(state, 9)).toThrow("Position must be between 0 and 8");
   });
 
   it("throws when the position is not an integer", async () => {
-    expect(() => makeMove(createGame(), 1.5)).toThrow(
-      "Position must be an integer",
-    );
+    const state = await fetchNewGame();
+    expect(() => makeMove(state, 1.5)).toThrow("Position must be an integer");
   });
 
   it("throws when the game is already won", async () => {
