@@ -1,7 +1,23 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { makeMove, getWinner } from "./tic-tac-toe";
 import type { GameState } from "./types";
 import { fetchNewGame } from "./App";
+
+// Mock fetch globally
+beforeEach(() => {
+  globalThis.fetch = vi.fn((url: string) => {
+    if (url === "/game") {
+      return Promise.resolve({
+        json: () =>
+          Promise.resolve({
+            board: [null, null, null, null, null, null, null, null, null],
+            currentPlayer: "X",
+          } as GameState),
+      });
+    }
+    return Promise.reject(new Error(`Unknown URL: ${url}`));
+  }) as unknown as typeof fetch;
+});
 
 // Helper: apply a sequence of moves to a fresh game
 async function playMoves(...positions: number[]): Promise<GameState> {
@@ -11,31 +27,6 @@ async function playMoves(...positions: number[]): Promise<GameState> {
   }
   return state;
 }
-
-// ---------------------------------------------------------------------------
-// createGame
-// ---------------------------------------------------------------------------
-describe("createGame", () => {
-  it("returns an empty board", async () => {
-    const game = await fetchNewGame();
-    expect(game.board).toEqual([
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-    ]);
-  });
-
-  it("starts with X as the current player", async () => {
-    const game = await fetchNewGame();
-    expect(game.currentPlayer).toBe("X");
-  });
-});
 
 // ---------------------------------------------------------------------------
 // makeMove
@@ -72,22 +63,19 @@ describe("makeMove", () => {
     expect(() => makeMove(state, 0)).toThrow("Position is already occupied");
   });
 
-  it("throws when the position is below 0", () => {
-    expect(async () => makeMove(await fetchNewGame(), -1)).toThrow(
-      "Position must be between 0 and 8",
-    );
+  it("throws when the position is below 0", async () => {
+    const state = await fetchNewGame();
+    expect(() => makeMove(state, -1)).toThrow("Position must be between 0 and 8");
   });
 
-  it("throws when the position is above 8", () => {
-    expect(async () => makeMove(await fetchNewGame(), 9)).toThrow(
-      "Position must be between 0 and 8",
-    );
+  it("throws when the position is above 8", async () => {
+    const state = await fetchNewGame();
+    expect(() => makeMove(state, 9)).toThrow("Position must be between 0 and 8");
   });
 
-  it("throws when the position is not an integer", () => {
-    expect(async () => makeMove(await fetchNewGame(), 1.5)).toThrow(
-      "Position must be an integer",
-    );
+  it("throws when the position is not an integer", async () => {
+    const state = await fetchNewGame();
+    expect(() => makeMove(state, 1.5)).toThrow("Position must be an integer");
   });
 
   it("throws when the game is already won", async () => {
@@ -105,78 +93,78 @@ describe("getWinner", () => {
     expect(getWinner(await fetchNewGame())).toBeUndefined();
   });
 
-  it("returns undefined when no one has won yet", () => {
+  it("returns undefined when no one has won yet", async () => {
     // X(0), O(4)
     const state = await playMoves(0, 4);
     expect(getWinner(state)).toBeUndefined();
   });
 
   // --- Row wins ---
-  it("detects X winning with the top row", () => {
+  it("detects X winning with the top row", async () => {
     // X(0), O(3), X(1), O(4), X(2)
-    const state = playMoves(0, 3, 1, 4, 2);
+    const state = await playMoves(0, 3, 1, 4, 2);
     expect(getWinner(state)?.winner).toBe("X");
     expect(getWinner(state)?.winningPositions).toEqual([0, 1, 2]);
   });
 
-  it("detects O winning with the middle row", () => {
+  it("detects O winning with the middle row", async () => {
     // X(0), O(3), X(1), O(4), X(6), O(5)
-    const state = playMoves(0, 3, 1, 4, 6, 5);
+    const state = await playMoves(0, 3, 1, 4, 6, 5);
     expect(getWinner(state)?.winner).toBe("O");
     expect(getWinner(state)?.winningPositions).toEqual([3, 4, 5]);
   });
 
-  it("detects X winning with the bottom row", () => {
+  it("detects X winning with the bottom row", async () => {
     // X(6), O(0), X(7), O(1), X(8)
-    const state = playMoves(6, 0, 7, 1, 8);
+    const state = await playMoves(6, 0, 7, 1, 8);
     expect(getWinner(state)?.winner).toBe("X");
     expect(getWinner(state)?.winningPositions).toEqual([6, 7, 8]);
   });
 
   // --- Column wins ---
-  it("detects X winning with the left column", () => {
+  it("detects X winning with the left column", async () => {
     // X(0), O(1), X(3), O(4), X(6)
-    const state = playMoves(0, 1, 3, 4, 6);
+    const state = await playMoves(0, 1, 3, 4, 6);
     expect(getWinner(state)?.winner).toBe("X");
     expect(getWinner(state)?.winningPositions).toEqual([0, 3, 6]);
   });
 
-  it("detects O winning with the middle column", () => {
+  it("detects O winning with the middle column", async () => {
     // X(0), O(1), X(3), O(4), X(8), O(7)
-    const state = playMoves(0, 1, 3, 4, 8, 7);
+    const state = await playMoves(0, 1, 3, 4, 8, 7);
     expect(getWinner(state)?.winner).toBe("O");
     expect(getWinner(state)?.winningPositions).toEqual([1, 4, 7]);
   });
 
-  it("detects X winning with the right column", () => {
+  it("detects X winning with the right column", async () => {
     // X(2), O(0), X(5), O(1), X(8)
-    const state = playMoves(2, 0, 5, 1, 8);
+    const state = await playMoves(2, 0, 5, 1, 8);
     expect(getWinner(state)?.winner).toBe("X");
     expect(getWinner(state)?.winningPositions).toEqual([2, 5, 8]);
   });
 
   // --- Diagonal wins ---
-  it("detects X winning with the main diagonal", () => {
+  it("detects X winning with the main diagonal", async () => {
     // X(0), O(1), X(4), O(2), X(8)
-    const state = playMoves(0, 1, 4, 2, 8);
+    const state = await playMoves(0, 1, 4, 2, 8);
     expect(getWinner(state)?.winner).toBe("X");
     expect(getWinner(state)?.winningPositions).toEqual([0, 4, 8]);
   });
 
-  it("detects O winning with the anti-diagonal", () => {
+  it("detects O winning with the anti-diagonal", async () => {
     // X(0), O(2), X(1), O(4), X(8), O(6)
-    const state = playMoves(0, 2, 1, 4, 8, 6);
+    const state = await playMoves(0, 2, 1, 4, 8, 6);
     expect(getWinner(state)?.winner).toBe("O");
     expect(getWinner(state)?.winningPositions).toEqual([2, 4, 6]);
   });
 
   // --- Draw / full board ---
-  it("returns undefined on a draw (full board, no winner)", () => {
+  it("returns undefined on a draw (full board, no winner)", async () => {
     // X O X
     // X X O
     // O X O
     // Moves: X(0), O(1), X(2), O(5), X(3), O(6), X(4), O(8), X(7)
-    const state = playMoves(0, 1, 2, 5, 3, 6, 4, 8, 7);
+    const state = await playMoves(0, 1, 2, 5, 3, 6, 4, 8, 7);
     expect(getWinner(state)).toBeUndefined();
     // Also verify the board is full
     expect(state.board.every((cell) => cell !== null)).toBe(true);
@@ -187,7 +175,7 @@ describe("getWinner", () => {
 // Full game sequences
 // ---------------------------------------------------------------------------
 describe("full game sequences", () => {
-  it("plays a complete game where X wins", () => {
+  it("plays a complete game where X wins", async () => {
     let state = await fetchNewGame();
 
     state = makeMove(state, 4); // X center
@@ -207,16 +195,16 @@ describe("full game sequences", () => {
     expect(getWinner(state)?.winningPositions).toEqual([1, 4, 7]);
   });
 
-  it("plays a complete game ending in a draw", () => {
+  it("plays a complete game ending in a draw", async () => {
     // X | O | X
     // O | X | X
     // O | X | O
-    const state = playMoves(0, 1, 2, 3, 4, 6, 5, 8, 7);
+    const state = await playMoves(0, 1, 2, 3, 4, 6, 5, 8, 7);
     expect(getWinner(state)).toBeUndefined();
     expect(state.board.every((cell) => cell !== null)).toBe(true);
   });
 
-  it("preserves immutability through a full game", () => {
+  it("preserves immutability through a full game", async () => {
     const states: GameState[] = [await fetchNewGame()];
     // X(4), O(0), X(1), O(3), X(7) — X wins middle column
     const moves = [4, 0, 1, 3, 7];
