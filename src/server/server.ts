@@ -2,6 +2,7 @@ import express from "express";
 import ViteExpress from "vite-express";
 import { makeMove } from "../tic-tac-toe.ts";
 import type { GameState, IGameMap } from "../types.ts";
+import type { UUID } from "crypto";
 
 export const app = express();
 app.use(express.json());
@@ -57,7 +58,7 @@ app.post("/move:gameId", (req, res) => {
 /**
  * Create a new game. Use a UUID as the game ID, store game state
  */
-app.post("/game", (_, res) => {
+app.post("/newgame", (_, res) => {
   // create a new game with a unique ID
   const gameID = crypto.randomUUID();
   GAME_MAP.set(gameID, DEFAULT_GAME_STATE);

@@ -1,3 +1,5 @@
+import type { GameState } from "./types";
+
 export type Player = "X" | "O";
 
 export type Cell = Player | null;
@@ -10,11 +12,6 @@ export type Cell = Player | null;
 //  ---------
 //  6 | 7 | 8
 export type Board = [Cell, Cell, Cell, Cell, Cell, Cell, Cell, Cell, Cell];
-
-export type GameState = {
-  board: Board;
-  currentPlayer: Player;
-};
 
 // makeMove should get the existing state of the cell, and adjust with the Player's symbol
 export function makeMove(state: GameState, position: number): GameState {
@@ -137,3 +134,5 @@ export function DrawDetection(state: GameState): boolean {
 export function isGameOver(state: GameState): boolean {
   return getWinner(state) !== null || DrawDetection(state);
 }
+
+export function newGameCall() {}

@@ -25,7 +25,8 @@
 // When we call GET /listgames, we should not return inactive games.
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { GAME_MAP, DEFAULT_GAME_STATE } from "./server/server";
+import request from "supertest";
+import { app, GAME_MAP, DEFAULT_GAME_STATE } from "./server/server";
 
 beforeEach(() => {
   // Clear the database before each test for isolation
@@ -36,10 +37,12 @@ beforeEach(() => {
 // newGame()
 
 // -----------------------------------------
-describe("newGameCall", () => {
-  it("fetchNewGame returns a new game state with a new uuid", async () => {
-    const newgameState = await newGameCall();
-    expect(newgameState.board).toEqual([
+describe("POST /newgame", () => {
+  it("returns a new game state with a new uuid", async () => {
+    const res = await request(app).post("/newgame");
+
+    expect(res.status).toBe(200);
+    expect(res.body.board).toEqual([
       null,
       null,
       null,
@@ -50,60 +53,85 @@ describe("newGameCall", () => {
       null,
       null,
     ]);
-    expect(newgameState.currentPlayer).toBe("X");
-    expect(newgameState.gameID).toBeDefined();
-    expect(newgameState.gameID).toHaveLength(36); // UUID length
+    expect(res.body.currentPlayer).toBe("X");
+    expect(res.body.gameID).toBeDefined();
+    expect(res.body.gameID).toHaveLength(36); // UUID length
   });
 });
 
-describe("makeMove with multiplayer server", () => {
+describe("POST /move/:gameID", () => {
   it("makes a move on the server and returns updated game state", async () => {
-    const mockUUID = "123e4567-e89b-12d3-a456-426614174000";
+    // First create a game
+    const newGameRes = await request(app).post("/newgame");
+    const gameID = newGameRes.body.gameID;
 
-    const updatedState = await moveAPICall(
-      mockUUID,
-      0, // position
-    );
+    // Then make a move
+    const res = await request(app).post(`/move/${gameID}`).send({ index: 0 });
 
-    expect(updatedState.board[0]).toBe("X");
-    expect(updatedState.currentPlayer).toBe("O");
-    expect(updatedState.gameID).toBe(mockUUID);
+    expect(res.status).toBe(200);
+    expect(res.body.board[0]).toBe("X");
+    expect(res.body.currentPlayer).toBe("O");
+    expect(res.body.gameID).toBe(gameID);
+  });
+
+  it("returns 404 for invalid game ID", async () => {
+    const res = await request(app)
+      .post("/move/invalid-uuid")
+      .send({ index: 0 });
+
+    expect(res.status).toBe(404);
   });
 });
 
-describe("toLobby makes a get request", () => {
-  it("makes a get request to the homepage", async () => {
-    const homepage = await toLobby();
+describe("GET /listgames", () => {
+  it("returns empty array when no games exist", async () => {
+    const res = await request(app).get("/listgames");
 
-    expect(homepage.status).toBe(200);
+    expect(res.status).toBe(200);
+    expect(res.body.games).toEqual([]);
   });
 });
 
 describe("all active games are listed", () => {
-  it("lists all active games", async () => {
-    // add inactive game
+  it("lists only active games, not inactive ones", async () => {
+    const inactive_uuid = crypto.randomUUID();
 
-    const inActiveGame: GameState = { ...DEFAULT_GAME_STATE, inActive: true };
+    const active_uuid = crypto.randomUUID();
 
-    // add to mock db
+    // Add an inactive game directly to the map
+    GAME_MAP.set(inactive_uuid, { ...DEFAULT_GAME_STATE, inActive: true });
 
-    const activeGame: GameState = { ...DEFAULT_GAME_STATE };
+    // Add an active game directly to the map
+    GAME_MAP.set(active_uuid, { ...DEFAULT_GAME_STATE });
 
-    // add to mock db
+    const res = await request(app).get("/listgames");
 
-    const activeGames: GameState[] = await getActiveGames();
-
-    // function on mockDB for keys(), filtering where inActive: true
-
-    // expect uuids from mockDB filter to be equal to the activeGames list
+    expect(res.status).toBe(200);
+    expect(res.body.games).toContain(active_uuid);
+    expect(res.body.games).not.toContain(inactive_uuid);
+    expect(res.body.games).toHaveLength(1);
   });
 });
 
-describe("deleting a game removes it from the db", () => {
-  it("deletes a gameID if inactive is true ", async () => {
-    // use inactive game from previous test? generate new one?
-    // add new inactive game to db
-    // remove it with the function we defined
-    // expect DB not to contain the inActive game
+describe("DELETE /game/:gameID", () => {
+  it("deletes a game from the database", async () => {
+    // Create a game first
+    const newGameRes = await request(app).post("/newgame");
+    const gameID = newGameRes.body.gameID;
+
+    // Verify it exists
+    expect(GAME_MAP.has(gameID)).toBe(true);
+
+    // Delete it
+    const deleteRes = await request(app).delete(`/game/${gameID}`);
+    expect(deleteRes.status).toBe(200);
+
+    // Verify it's gone
+    expect(GAME_MAP.has(gameID)).toBe(false);
+  });
+
+  it("returns 404 for non-existent game", async () => {
+    const res = await request(app).delete("/game/non-existent-id");
+    expect(res.status).toBe(404);
   });
 });
