@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { GameState } from "../types";
 import { TicTacToeTable } from "./Table";
@@ -10,12 +10,21 @@ export interface IGamePageProps {
   winner?: WinnerData;
 }
 
+export interface IWebSocketMove {
+  type: string;
+  gameId: UUID;
+  idx: number;
+}
+
 export function GamePage(gameprops: IGamePageProps) {
   const { gameId } = useParams();
   const [gameState, setGameState] = useState<GameState>();
 
-  // we want to open a websocket for each instance of the game, on the client side.
+  // we need to useRef(), because we want a reference to the websocket across the component.
 
+  const socketRef = useRef<WebSocket | null>(null); // ref is empty
+
+  // we want to open a websocket for each instance of the game, on the client side.
   const GAME_ENDPOINT = `/api/game/${gameId}`;
 
   const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -29,11 +38,16 @@ export function GamePage(gameprops: IGamePageProps) {
     // Create WebSocket connection.
     const socket = new WebSocket(wsUrl);
 
+    socketRef.current = socket; // now we store the socket
+
     // Connection opened
     socket.addEventListener("open", (event) => {
       socket.send("Hello Server!");
+      socket.send("");
       console.log(`websocket is ${socket.url}`);
     });
+
+    return () => socket.close();
   }, [gameId]);
 
   // Don't render until data is loaded
@@ -47,6 +61,16 @@ export function GamePage(gameprops: IGamePageProps) {
     setGameState(newState);
   }
 
+  function webSocketMove(gameId: UUID, index: number) {
+    socketRef.current?.send(
+      JSON.stringify({
+        type: "move",
+        gameId,
+        index,
+      }),
+    );
+  }
+
   return (
     <div>
       <TicTacToeTable
@@ -54,7 +78,7 @@ export function GamePage(gameprops: IGamePageProps) {
         currentPlayer={gameState.currentPlayer}
         // we only need to expose idx in Table, as we pass gameId right here...
         onCellClick={(idx: number) => {
-          updateTable(gameId as UUID, idx);
+          webSocketMove(gameId as UUID, idx);
         }}
         winningPositions={gameprops.winner?.winningPositions}
       />
