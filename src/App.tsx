@@ -2,17 +2,9 @@ import { useEffect, useState } from "react";
 import { getWinner } from "./tic-tac-toe";
 import type { GameState } from "./types";
 import "./index.css";
-import { TicTacToeTable } from "./components/Table";
 import { NewGameButton } from "./components/NewGame";
 import type { UUID } from "crypto";
-import {
-  BrowserRouter,
-  Link,
-  Route,
-  Router,
-  Routes,
-  useLocation,
-} from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { GamePage } from "./components/GamePage";
 import { DisplayActiveGames } from "./components/DisplayActiveGames";
 
