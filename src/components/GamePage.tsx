@@ -38,7 +38,7 @@ export function GamePage(gameprops: IGamePageProps) {
 
       setGameState(gameState);
     });
-  }, [gameId]);
+  }, [gameId, GAME_ENDPOINT, wsUrl]);
 
   // the type of this is defined in the server code...
   function webSocketMove(gameId: UUID, index: number) {
