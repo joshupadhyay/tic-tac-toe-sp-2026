@@ -117,8 +117,25 @@ if (process.env.NODE_ENV !== "test") {
   // Use noServer mode to avoid conflicts with Vite's HMR WebSocket
   const wsServer = new WebSocketServer({ noServer: true });
 
-  wsServer.on("connection", (ws) => {
-    console.log("WebSocket connection established");
+  // On each connection, we will get a unique websocket object (ws), and the request url from the client (the websocket url!)
+  // We need to store this ws in the game map
+  wsServer.on("connection", (ws, request) => {
+    console.log(`${request.url} is connected`);
+
+    // pull gameId from ws url
+    // /api/game/bfa0e843-af04-4bea-9cd3-faa41349b87c
+
+    const gameId: UUID = request.url!.split("/game/")[1] as UUID; // get the gameId
+
+    // get existing Websocket array or init empty
+    const existing = WS_MAP.get(gameId) ?? [];
+
+    // TIL you can't do (WS_MAP.get(gameId) ?? [];).push(), as push returns the length of the array
+
+    existing.push(ws); // add this connection
+    WS_MAP.set(gameId, existing); // save back
+
+    console.log(`all websockets, ${WS_MAP}`);
   });
 
   // Manually handle upgrade requests, only for our custom path
