@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import type { GameState } from "../types";
+import type { GameState, IWebSocketMove } from "../types";
 import { TicTacToeTable } from "./Table";
 import { moveAPICall } from "../App";
 import type { WinnerData } from "../tic-tac-toe";
@@ -33,8 +33,15 @@ export function GamePage(gameprops: IGamePageProps) {
 
     // store reference to websocket
     socketRef.current = socket;
+
+    socket.addEventListener("message", (message) => {
+      const gameState: GameState = JSON.parse(message.data);
+
+      setGameState(gameState);
+    });
   }, [gameId]);
 
+  // the type of this is defined in the server code...
   function webSocketMove(gameId: UUID, index: number) {
     socketRef.current!.send(
       JSON.stringify({
