@@ -1,8 +1,11 @@
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { fetchNewGame } from "../App";
-import type { GameState, Player } from "../types";
 
-export function NewGameButton() {
+interface NewGameButtonProps {
+  onGameCreated: () => void;
+}
+
+export function NewGameButton({ onGameCreated }: NewGameButtonProps) {
   const navigate = useNavigate();
 
   const getNewGame = async () => {
@@ -10,6 +13,7 @@ export function NewGameButton() {
 
     console.log(`new game ID, ${gameId}`);
 
+    onGameCreated();
     navigate(`/game/${gameId}`);
   };
 
