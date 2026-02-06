@@ -2,11 +2,14 @@ import express from "express";
 import ViteExpress from "vite-express";
 import type { GameState } from "../types.ts";
 import { makeMove } from "./accessory.ts";
-
+import type { UUID } from "crypto";
+import { WebSocketServer, WebSocket } from "ws";
+import type { IncomingMessage } from "http";
 export const app = express();
 app.use(express.json());
 
 export const GAME_MAP = new Map<string, GameState>();
+export const WS_MAP = new Map<UUID, WebSocket[]>();
 
 export const DEFAULT_GAME_STATE: GameState = {
   // truly blank game state
@@ -108,7 +111,49 @@ app.delete("/api/game/:gameID", (req, res) => {
 
 // Only start server when not in test mode
 if (process.env.NODE_ENV !== "test") {
-  ViteExpress.listen(app, 5173, () => {
+  const expressServer = ViteExpress.listen(app, 5173, () => {
     console.log("Server is running on http://localhost:5173");
   });
+
+  // Use noServer mode to avoid conflicts with Vite's HMR WebSocket
+  const wsServer = new WebSocketServer({ noServer: true });
+
+  // On each connection, we will get a unique websocket object (ws), and the request url from the client (the websocket url!)
+  wsServer.on("connection", (ws, request) => {
+    console.log(`${request.url} is connected`);
+
+    // stores ws in the game map
+    handleWebSocketRequest(ws, request);
+  });
+
+  // Manually handle upgrade requests, only for our custom path
+  expressServer.on("upgrade", (request, socket, head) => {
+    const pathname = new URL(request.url!, `http://${request.headers.host}`)
+      .pathname;
+
+    // Only handle /api/ path (our defined server path), let Vite hot reload other paths!
+    if (pathname.startsWith(`/api/`)) {
+      wsServer.handleUpgrade(request, socket, head, (ws) => {
+        wsServer.emit("connection", ws, request);
+      });
+    }
+    // Don't call socket.destroy() for other paths - let Vite's HMR handle them
+  });
+}
+
+/**
+ * Handles the websocket adding to our 'DB', and url splitting
+ * @param ws Websocket
+ * @param req Websocket request URL
+ */
+function handleWebSocketRequest(ws: WebSocket, req: IncomingMessage): void {
+  const gameId: UUID = req.url!.split("/game/")[1] as UUID; // get the gameId
+
+  // get existing Websocket array or init empty
+  const existing = WS_MAP.get(gameId) ?? [];
+
+  // TIL you can't do (WS_MAP.get(gameId) ?? [];).push(), as push returns the length of the array
+
+  existing.push(ws); // add this connection
+  WS_MAP.set(gameId, existing); // save back
 }

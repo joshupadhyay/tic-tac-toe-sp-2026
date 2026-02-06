@@ -1,36 +1,15 @@
-import { useEffect, useState } from "react";
 import type { GameState } from "../types";
-import { getAllGames, getGame } from "../App";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
-export function DisplayActiveGames() {
-  // states: activeGameIDs
-  const [activeGameIds, setActiveGameIds] = useState<string[]>([]);
-  // activeGames (actual games)
-  const [activeGames, setActiveGames] = useState<GameState[]>([]);
+interface ActiveGamesProps {
+  activeGameIds: string[];
+  activeGames: GameState[];
+}
 
-  useEffect(() => {
-    async function fetchData() {
-      // Get list of gameIds
-      const listData = await getAllGames();
-      const gameIds = listData.games;
-      setActiveGameIds(gameIds);
-
-      // Query for actual games
-      const allGameStates: GameState[] = [];
-
-      for (const id of gameIds) {
-        const data = await getGame(id);
-        allGameStates.push(data.gameState);
-      }
-
-      // setState on activeGames: list of game states
-      setActiveGames(allGameStates);
-    }
-
-    fetchData();
-  }, []);
-
+export function DisplayActiveGames({
+  activeGameIds,
+  activeGames,
+}: ActiveGamesProps) {
   if (activeGames.length === 0) {
     return <div>No active games</div>;
   }
@@ -38,7 +17,11 @@ export function DisplayActiveGames() {
   return (
     <div className="flex flex-wrap gap-6">
       {activeGames.map((game, idx) => (
-        <Link to={`/game/${activeGameIds[idx]}`} className="text-sm">
+        <Link
+          to={`/game/${activeGameIds[idx]}`}
+          className="text-sm"
+          key={activeGameIds[idx]}
+        >
           <MiniTicTacToeTable {...game}></MiniTicTacToeTable>
           continue?
         </Link>

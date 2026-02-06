@@ -14,10 +14,26 @@ export function GamePage(gameprops: IGamePageProps) {
   const { gameId } = useParams();
   const [gameState, setGameState] = useState<GameState>();
 
+  // we want to open a websocket for each instance of the game, on the client side.
+
+  const GAME_ENDPOINT = `/api/game/${gameId}`;
+
+  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const wsUrl = `${wsProtocol}//${window.location.host}/api/game/${gameId}`;
+
   useEffect(() => {
-    const res = fetch(`/api/game/${gameId}`)
+    const res = fetch(GAME_ENDPOINT)
       .then((res) => res.json())
       .then((data) => setGameState(data.gameState));
+
+    // Create WebSocket connection.
+    const socket = new WebSocket(wsUrl);
+
+    // Connection opened
+    socket.addEventListener("open", (event) => {
+      socket.send("Hello Server!");
+      console.log(`websocket is ${socket.url}`);
+    });
   }, [gameId]);
 
   // Don't render until data is loaded
