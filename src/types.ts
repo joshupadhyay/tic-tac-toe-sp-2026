@@ -25,3 +25,9 @@ export type GameState = {
 };
 
 export type IGameMap = Map<string, GameState>;
+
+export type IWebSocketMove = {
+  type: "move";
+  gameId: UUID;
+  index: number;
+};

@@ -1,6 +1,6 @@
 import express from "express";
 import ViteExpress from "vite-express";
-import type { GameState } from "../types.ts";
+import type { GameState, IWebSocketMove } from "../types.ts";
 import { makeMove } from "./accessory.ts";
 import type { UUID } from "crypto";
 import { WebSocketServer, WebSocket } from "ws";
@@ -124,6 +124,39 @@ if (process.env.NODE_ENV !== "test") {
 
     // stores ws in the game map
     handleWebSocketRequest(ws, request);
+
+    /**
+     * Each websocket will recieve messages, not the server itself! Think of this like your HTTP route...
+     */
+
+    ws.on("message", (request) => {
+      const req: IWebSocketMove = JSON.parse(request.toString());
+
+      const type = req.type;
+
+      switch (type) {
+        case "move":
+          const { gameId, index } = req;
+          const gameState = GAME_MAP.get(gameId);
+
+          if (!gameState) {
+            return { error: "Game not found" };
+          }
+
+          console.log(index);
+
+          const updatedGameState = makeMove(gameState, index);
+
+          GAME_MAP.set(gameId, updatedGameState);
+
+          // now update all websockets with information:
+          const allSockets = WS_MAP.get(gameId);
+
+          allSockets?.forEach((ws) => {
+            ws.send(JSON.stringify({ gameId, ...updatedGameState }));
+          });
+      }
+    });
   });
 
   // Manually handle upgrade requests, only for our custom path
