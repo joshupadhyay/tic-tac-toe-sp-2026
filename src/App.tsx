@@ -2,22 +2,14 @@ import { useEffect, useState } from "react";
 import { getWinner } from "./tic-tac-toe";
 import type { GameState } from "./types";
 import "./index.css";
-import { TicTacToeTable } from "./components/Table";
 import { NewGameButton } from "./components/NewGame";
-import type { UUID } from "crypto";
-import {
-  BrowserRouter,
-  Link,
-  Route,
-  Router,
-  Routes,
-  useLocation,
-} from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { GamePage } from "./components/GamePage";
 import { DisplayActiveGames } from "./components/DisplayActiveGames";
+import { getAllGames, getGame, newGameCall } from "./api";
 
 export default function App() {
-  let [gameState, setGameState] = useState<GameState>({
+  const [gameState, setGameState] = useState<GameState>({
     board: [null, null, null, null, null, null, null, null, null],
     currentPlayer: "X",
   });
@@ -49,17 +41,47 @@ export default function App() {
 
   // Update list of active games when location changes
   useEffect(() => {
-    fetchData();
+    let ignore = false;
+
+    async function fetchGames() {
+      const listData = await getAllGames();
+      const gameIds = listData.games;
+
+      const allGameStates: GameState[] = [];
+      for (const id of gameIds) {
+        const data = await getGame(id);
+        allGameStates.push(data.gameState);
+      }
+
+      if (!ignore) {
+        setActiveGameIds(gameIds);
+        setActiveGames(allGameStates);
+      }
+    }
+
+    fetchGames();
+
+    return () => {
+      ignore = true;
+    };
   }, [location]);
 
   // Fetch initial gameState on mount
   useEffect(() => {
+    let ignore = false;
+
     newGameCall().then((newGameState: GameState) => {
-      setGameState(newGameState);
+      if (!ignore) {
+        setGameState(newGameState);
+      }
     });
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
-  let winnerInfo = getWinner(gameState);
+  const winnerInfo = getWinner(gameState);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4">
@@ -80,75 +102,4 @@ export default function App() {
       />
     </div>
   );
-}
-
-export async function fetchNewGame(): Promise<GameState> {
-  const response = await fetch("/api/newgame", {
-    method: "POST",
-  });
-  const data = await response.json();
-  return data;
-}
-
-/**
- *
- * @returns new GameState with gameID
- */
-export async function newGameCall(): Promise<GameState> {
-  const response = await fetch("/api/newgame", {
-    method: "GET",
-  });
-
-  const data = await response.json();
-
-  return data;
-}
-
-export async function moveAPICall(gameId: UUID, idx: number) {
-  const resp = await fetch(`/api/move/${gameId}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ index: idx }),
-  });
-
-  return resp.json();
-}
-
-export async function getAllGames() {
-  const resp = await fetch(`/api/listgames`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-
-  return await resp.json();
-}
-
-export async function toLobby() {
-  // claude I want to navigate to the homepage.
-  const resp = await fetch("/");
-
-  return resp.json();
-}
-
-/**
- *
- * @returns list of gameIDs for all active games.
- */
-
-export async function getActiveGames() {
-  const resp = await fetch("/api/listgames");
-
-  const data: Pick<GameState, "gameId">[] = await resp.json();
-
-  return data;
-}
-
-export async function getGame(gameId: UUID) {
-  const resp = await fetch(`/api/game/${gameId}`);
-
-  return await resp.json();
 }

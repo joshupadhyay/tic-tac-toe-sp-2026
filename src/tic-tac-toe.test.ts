@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { makeMove, getWinner } from "./tic-tac-toe";
 import type { GameState } from "./types";
-import { fetchNewGame } from "./App";
+import { fetchNewGame } from "./api";
 
 // Mock fetch globally
 beforeEach(() => {

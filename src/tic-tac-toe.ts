@@ -115,7 +115,7 @@ export function winDetection(state: GameState): number[] | void {
   const player = state.currentPlayer === "X" ? "O" : "X";
 
   for (let i: number = 0; i < WinningPositions.length; i++) {
-    let possibleWin = WinningPositions[i];
+    const possibleWin = WinningPositions[i];
 
     if (possibleWin.every((position) => state.board[position] == player)) {
       return possibleWin; //every board position from the possible win array is the same symbol = a win

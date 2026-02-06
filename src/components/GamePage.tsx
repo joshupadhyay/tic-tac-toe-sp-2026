@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import type { GameState, IWebSocketMove } from "../types";
+import type { GameState } from "../types";
 import { TicTacToeTable } from "./Table";
-import { moveAPICall } from "../App";
 import type { WinnerData } from "../tic-tac-toe";
 import type { UUID } from "crypto";
 
@@ -24,7 +23,7 @@ export function GamePage(gameprops: IGamePageProps) {
   const wsUrl = `${wsProtocol}//${window.location.host}/api/game/${gameId}`;
 
   useEffect(() => {
-    const res = fetch(GAME_ENDPOINT)
+    fetch(GAME_ENDPOINT)
       .then((res) => res.json())
       .then((data) => setGameState(data.gameState));
 
@@ -39,7 +38,7 @@ export function GamePage(gameprops: IGamePageProps) {
 
       setGameState(gameState);
     });
-  }, [gameId]);
+  }, [gameId, GAME_ENDPOINT, wsUrl]);
 
   // the type of this is defined in the server code...
   function webSocketMove(gameId: UUID, index: number) {
@@ -56,11 +55,6 @@ export function GamePage(gameprops: IGamePageProps) {
   // This can be fixed with useFetcher, or useLoaderData, but I'll ignore for now..
   if (!gameState) {
     return <div>Loading...</div>;
-  }
-
-  async function updateTable(id: UUID, idx: number) {
-    let newState = await moveAPICall(id, idx);
-    setGameState(newState);
   }
 
   return (

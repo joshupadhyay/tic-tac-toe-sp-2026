@@ -35,9 +35,7 @@ app.get("/game", (_, res) => {
   });
 });
 
-///// for multiplayer – Let's build these functions first before replacing the ones above
-
-/**
+/*
  * Create a new game. Use a UUID as the game ID, store game state
  */
 app.post("/api/newgame", (_, res) => {
@@ -135,7 +133,7 @@ if (process.env.NODE_ENV !== "test") {
       const type = req.type;
 
       switch (type) {
-        case "move":
+        case "move": {
           const { gameId, index } = req;
           const gameState = GAME_MAP.get(gameId);
 
@@ -155,6 +153,8 @@ if (process.env.NODE_ENV !== "test") {
           allSockets?.forEach((ws) => {
             ws.send(JSON.stringify({ gameId, ...updatedGameState }));
           });
+          break;
+        }
       }
     });
   });

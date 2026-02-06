@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { fetchNewGame } from "../App";
+import { fetchNewGame } from "../api";
 
 interface NewGameButtonProps {
   onGameCreated: () => void;
