@@ -4,7 +4,7 @@ import type {
   GameState,
   IWebSocketMessage,
   ChatMessage,
-  Player,
+  ChatParticipant,
 } from "../types.ts";
 import { makeMove } from "./accessory.ts";
 import type { UUID } from "crypto";
@@ -17,7 +17,7 @@ export const GAME_MAP = new Map<string, GameState>();
 export const WS_MAP = new Map<UUID, WebSocket[]>();
 
 // Maps a WebSocket to its player identity ("X", "O", or undefined for spectators)
-export const SOCKET_PLAYER_MAP = new Map<WebSocket, Player | undefined>();
+export const SOCKET_PLAYER_MAP = new Map<WebSocket, ChatParticipant | undefined>();
 
 // Stores chat history per game
 export const CHAT_HISTORY = new Map<UUID, ChatMessage[]>();
@@ -241,7 +241,7 @@ function handleWebSocketRequest(ws: WebSocket, req: IncomingMessage): UUID {
 
   // Assign player identity based on connection order
   // First = X, Second = O, Third+ = spectator (undefined)
-  let playerIdentity: Player | undefined;
+  let playerIdentity: ChatParticipant | undefined;
   if (existing.length === 0) {
     playerIdentity = "X";
   } else if (existing.length === 1) {
