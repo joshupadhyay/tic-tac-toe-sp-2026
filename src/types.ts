@@ -22,6 +22,7 @@ export type GameState = {
   currentPlayer: Player;
   inActive?: boolean;
   gameId?: UUID;
+  winningPositions?: number[];
 };
 
 export type IGameMap = Map<string, GameState>;

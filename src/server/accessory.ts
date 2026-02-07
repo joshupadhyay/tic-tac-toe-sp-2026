@@ -27,16 +27,21 @@ export function makeMove(state: GameState, position: number): GameState {
 
   newBoard[position] = state.currentPlayer;
 
+  const nextPlayer = switchPlayer(state);
+
   const newState = {
     board: newBoard,
-    currentPlayer: state.currentPlayer,
+    currentPlayer: nextPlayer,
   };
 
-  getWinner(newState);
+  // getWinner checks opposite of currentPlayer, so with nextPlayer set,
+  // it correctly checks if the player who just moved has won
+  const winnerData = getWinner(newState);
 
   // return new state
   return {
     board: newState.board,
-    currentPlayer: switchPlayer(state),
+    currentPlayer: nextPlayer,
+    winningPositions: winnerData?.winningPositions,
   };
 }

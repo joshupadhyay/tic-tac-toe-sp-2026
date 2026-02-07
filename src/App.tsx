@@ -1,19 +1,13 @@
 import { useEffect, useState } from "react";
-import { getWinner } from "./tic-tac-toe";
 import type { GameState } from "./types";
 import "./index.css";
 import { NewGameButton } from "./components/NewGame";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { GamePage } from "./components/GamePage";
 import { DisplayActiveGames } from "./components/DisplayActiveGames";
-import { getAllGames, getGame, newGameCall } from "./api";
+import { getAllGames, getGame } from "./api";
 
 export default function App() {
-  const [gameState, setGameState] = useState<GameState>({
-    board: [null, null, null, null, null, null, null, null, null],
-    currentPlayer: "X",
-  });
-
   const location = useLocation();
 
   // states: activeGameIDs
@@ -66,23 +60,6 @@ export default function App() {
     };
   }, [location]);
 
-  // Fetch initial gameState on mount
-  useEffect(() => {
-    let ignore = false;
-
-    newGameCall().then((newGameState: GameState) => {
-      if (!ignore) {
-        setGameState(newGameState);
-      }
-    });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  const winnerInfo = getWinner(gameState);
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4">
       <div className="text-4xl text-shadow-2xs">Tic Tac Toe</div>
@@ -92,7 +69,7 @@ export default function App() {
       <Routes>
         <Route
           path="/game/:gameId"
-          element={<GamePage winner={winnerInfo} />}
+          element={<GamePage />}
         ></Route>
       </Routes>
       <NewGameButton onGameCreated={fetchData} />
