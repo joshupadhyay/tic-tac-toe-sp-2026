@@ -42,7 +42,10 @@ export function GamePage() {
       } else if (data.type === "chat") {
         // New chat message - append to existing
         console.log("New chat message:", data);
-        setChatMessages((prev) => [...prev, { player: data.player, text: data.text }]);
+        setChatMessages((prev) => [
+          ...prev,
+          { player: data.player, text: data.text },
+        ]);
       } else {
         // Game state update (no type field, or type is "move" response)
         setGameState(data);

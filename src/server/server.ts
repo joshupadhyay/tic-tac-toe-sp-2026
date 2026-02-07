@@ -184,9 +184,11 @@ if (process.env.NODE_ENV !== "test") {
 
           // Look up who this socket belongs to
           const player = SOCKET_PLAYER_MAP.get(ws);
+          console.log("Chat received, player lookup:", player);
 
-          // Only allow X and O to chat (not spectators)
+          // Reject if no player identity
           if (!player) {
+            console.log("Rejected: player is undefined");
             return;
           }
 
@@ -244,10 +246,15 @@ function handleWebSocketRequest(ws: WebSocket, req: IncomingMessage): UUID {
     playerIdentity = "X";
   } else if (existing.length === 1) {
     playerIdentity = "O";
+  } else {
+    const spectatorNumber = existing.length - 1; // 3rd connection = Spectator 1, 4th = Spectator 2, etc.
+    playerIdentity = `Spectator ${spectatorNumber}`;
   }
-  // else: spectator, stays undefined
 
   SOCKET_PLAYER_MAP.set(ws, playerIdentity);
+  console.log(
+    `New connection assigned: ${playerIdentity}, total sockets: ${existing.length + 1}`,
+  );
 
   // Initialize chat history for this game if it doesn't exist
   if (!CHAT_HISTORY.has(gameId)) {
