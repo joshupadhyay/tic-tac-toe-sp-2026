@@ -2,14 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { GameState } from "../types";
 import { TicTacToeTable } from "./Table";
-import type { WinnerData } from "../tic-tac-toe";
 import type { UUID } from "crypto";
 
-export interface IGamePageProps {
-  winner?: WinnerData;
-}
-
-export function GamePage(gameprops: IGamePageProps) {
+export function GamePage() {
   const { gameId } = useParams();
   const [gameState, setGameState] = useState<GameState>();
 
@@ -66,7 +61,7 @@ export function GamePage(gameprops: IGamePageProps) {
         onCellClick={(idx: number) => {
           webSocketMove(gameId as UUID, idx);
         }}
-        winningPositions={gameprops.winner?.winningPositions}
+        winningPositions={gameState.winningPositions}
       />
       <button>
         <Link to="/"> Back</Link>

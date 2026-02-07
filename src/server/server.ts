@@ -87,7 +87,7 @@ app.get("/api/listgames", (_, res) => {
 
   // needed claude to help do this. Filter to display only active games
   for (const [gameID, gameState] of GAME_MAP) {
-    if (!gameState.inActive) {
+    if (!gameState.inActive && !gameState.winningPositions) {
       validGameIds.push(gameID);
     }
   }
@@ -118,8 +118,6 @@ if (process.env.NODE_ENV !== "test") {
 
   // On each connection, we will get a unique websocket object (ws), and the request url from the client (the websocket url!)
   wsServer.on("connection", (ws, request) => {
-    console.log(`${request.url} is connected`);
-
     // stores ws in the game map
     handleWebSocketRequest(ws, request);
 
