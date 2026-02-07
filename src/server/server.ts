@@ -163,19 +163,25 @@ if (process.env.NODE_ENV !== "test") {
           const gameState = GAME_MAP.get(gameId);
 
           if (!gameState) {
-            return { error: "Game not found" };
+            ws.send(JSON.stringify({ type: "error", error: "Game not found" }));
+            return;
           }
 
-          const updatedGameState = makeMove(gameState, index);
+          try {
+            const updatedGameState = makeMove(gameState, index);
 
-          GAME_MAP.set(gameId, updatedGameState);
+            GAME_MAP.set(gameId, updatedGameState);
 
-          // now update all websockets with information:
-          const allSockets = WS_MAP.get(gameId);
+            // now update all websockets with information:
+            const allSockets = WS_MAP.get(gameId);
 
-          allSockets?.forEach((ws) => {
-            ws.send(JSON.stringify({ gameId, ...updatedGameState }));
-          });
+            allSockets?.forEach((socket) => {
+              socket.send(JSON.stringify({ gameId, ...updatedGameState }));
+            });
+          } catch (err) {
+            const message = err instanceof Error ? err.message : "Invalid move";
+            ws.send(JSON.stringify({ type: "error", error: message }));
+          }
           break;
         }
 

@@ -46,6 +46,9 @@ export function GamePage() {
           ...prev,
           { player: data.player, text: data.text },
         ]);
+      } else if (data.type === "error") {
+        // Invalid move - just ignore (or could show a toast/notification)
+        console.warn("Move error:", data.error);
       } else {
         // Game state update (no type field, or type is "move" response)
         setGameState(data);
