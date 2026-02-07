@@ -1,8 +1,10 @@
+import type { UUID } from "crypto";
 import type { GameState } from "../types";
 
 export interface TableProps extends GameState {
   onCellClick: (idx: number) => void;
   winningPositions?: number[]; // only when a winner exists
+  gameId?: UUID;
 }
 
 export function TicTacToeTable(props: TableProps) {
