@@ -10,3 +10,10 @@ Each `Cell` can contain 3 values at most - an X, an O, or null.
 Each player will take turns selecting a `Cell` to populate. 
 
 Any 3 symbols (X or O) in a row will cause the game to end. 
+
+
+
+System Diagram 
+
+
+![diagram](./systemdesign/systemdesign.drawio.svg)
