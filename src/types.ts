@@ -4,9 +4,14 @@
 
 import type { UUID } from "crypto";
 
-export type Player = "X" | "O";
+// Game players (who can make moves)
+export type GamePlayer = "X" | "O";
 
-export type Cell = Player | null;
+// Chat participants (players + spectators)
+export type ChatParticipant = GamePlayer | `Spectator ${number}`;
+
+// Cells on the board
+export type Cell = GamePlayer | null;
 
 // Board is a 3x3 grid, represented as a 9-element array.
 // Indices map to positions:
@@ -19,7 +24,7 @@ export type Board = [Cell, Cell, Cell, Cell, Cell, Cell, Cell, Cell, Cell];
 
 export type GameState = {
   board: Board;
-  currentPlayer: Player;
+  currentPlayer: GamePlayer;
   inActive?: boolean;
   gameId?: UUID;
   winningPositions?: number[];
@@ -32,3 +37,16 @@ export type IWebSocketMove = {
   gameId: UUID;
   index: number;
 };
+
+export type ChatMessage = {
+  player: ChatParticipant;
+  text: string;
+};
+
+export type IWebSocketChat = {
+  type: "chat";
+  gameId: UUID;
+  text: string;
+};
+
+export type IWebSocketMessage = IWebSocketMove | IWebSocketChat;

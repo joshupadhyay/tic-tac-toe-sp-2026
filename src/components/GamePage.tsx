@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import type { GameState } from "../types";
+import type { ChatMessage, GameState } from "../types";
 import { TicTacToeTable } from "./Table";
+import { Chat } from "./annoyingChat";
 import type { UUID } from "crypto";
 
 export function GamePage() {
   const { gameId } = useParams();
   const [gameState, setGameState] = useState<GameState>();
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   const socketRef = useRef<WebSocket | null>(null);
 
@@ -29,10 +31,31 @@ export function GamePage() {
     socketRef.current = socket;
 
     socket.addEventListener("message", (message) => {
-      const gameState: GameState = JSON.parse(message.data);
+      const data = JSON.parse(message.data);
+      console.log("WebSocket received:", data);
 
-      setGameState(gameState);
+      // Discriminate based on message type
+      if (data.type === "chat_history") {
+        // Initial chat history on connect
+        console.log("Setting chat history:", data.messages);
+        setChatMessages(data.messages);
+      } else if (data.type === "chat") {
+        // New chat message - append to existing
+        console.log("New chat message:", data);
+        setChatMessages((prev) => [
+          ...prev,
+          { player: data.player, text: data.text },
+        ]);
+      } else {
+        // Game state update (no type field, or type is "move" response)
+        setGameState(data);
+      }
     });
+
+    // Cleanup: close socket when component unmounts or dependencies change
+    return () => {
+      socket.close();
+    };
   }, [gameId, GAME_ENDPOINT, wsUrl]);
 
   // the type of this is defined in the server code...
@@ -46,6 +69,16 @@ export function GamePage() {
     );
   }
 
+  function sendChat(text: string) {
+    socketRef.current?.send(
+      JSON.stringify({
+        type: "chat",
+        gameId,
+        text,
+      }),
+    );
+  }
+
   // Don't render until data is loaded
   // This can be fixed with useFetcher, or useLoaderData, but I'll ignore for now..
   if (!gameState) {
@@ -54,15 +87,18 @@ export function GamePage() {
 
   return (
     <div>
-      <TicTacToeTable
-        board={gameState.board}
-        currentPlayer={gameState.currentPlayer}
-        // we only need to expose idx in Table, as we pass gameId right here...
-        onCellClick={(idx: number) => {
-          webSocketMove(gameId as UUID, idx);
-        }}
-        winningPositions={gameState.winningPositions}
-      />
+      <div className="flex gap-4">
+        <TicTacToeTable
+          board={gameState.board}
+          currentPlayer={gameState.currentPlayer}
+          // we only need to expose idx in Table, as we pass gameId right here...
+          onCellClick={(idx: number) => {
+            webSocketMove(gameId as UUID, idx);
+          }}
+          winningPositions={gameState.winningPositions}
+        />
+        <Chat messages={chatMessages} onSend={sendChat} />
+      </div>
       <button>
         <Link to="/"> Back</Link>
       </button>
