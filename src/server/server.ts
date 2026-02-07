@@ -1,6 +1,11 @@
 import express from "express";
 import ViteExpress from "vite-express";
-import type { GameState, IWebSocketMove } from "../types.ts";
+import type {
+  GameState,
+  IWebSocketMessage,
+  ChatMessage,
+  Player,
+} from "../types.ts";
 import { makeMove } from "./accessory.ts";
 import type { UUID } from "crypto";
 import { WebSocketServer, WebSocket } from "ws";
@@ -10,6 +15,12 @@ app.use(express.json());
 
 export const GAME_MAP = new Map<string, GameState>();
 export const WS_MAP = new Map<UUID, WebSocket[]>();
+
+// Maps a WebSocket to its player identity ("X", "O", or undefined for spectators)
+export const SOCKET_PLAYER_MAP = new Map<WebSocket, Player | undefined>();
+
+// Stores chat history per game
+export const CHAT_HISTORY = new Map<UUID, ChatMessage[]>();
 
 export const DEFAULT_GAME_STATE: GameState = {
   // truly blank game state
@@ -118,15 +129,31 @@ if (process.env.NODE_ENV !== "test") {
 
   // On each connection, we will get a unique websocket object (ws), and the request url from the client (the websocket url!)
   wsServer.on("connection", (ws, request) => {
-    // stores ws in the game map
-    handleWebSocketRequest(ws, request);
+    // stores ws in the game map and assigns player identity
+    const gameId = handleWebSocketRequest(ws, request);
+
+    // Send chat history to the newly connected client
+    const chatHistory = CHAT_HISTORY.get(gameId) ?? [];
+    ws.send(JSON.stringify({ type: "chat_history", messages: chatHistory }));
+
+    // Clean up when socket closes (important for React StrictMode double-mounting)
+    ws.on("close", () => {
+      // Remove from WS_MAP
+      const sockets = WS_MAP.get(gameId);
+      if (sockets) {
+        const filtered = sockets.filter((s) => s !== ws);
+        WS_MAP.set(gameId, filtered);
+      }
+      // Remove from SOCKET_PLAYER_MAP
+      SOCKET_PLAYER_MAP.delete(ws);
+    });
 
     /**
      * Each websocket will recieve messages, not the server itself! Think of this like your HTTP route...
      */
 
     ws.on("message", (request) => {
-      const req: IWebSocketMove = JSON.parse(request.toString());
+      const req: IWebSocketMessage = JSON.parse(request.toString());
 
       const type = req.type;
 
@@ -139,8 +166,6 @@ if (process.env.NODE_ENV !== "test") {
             return { error: "Game not found" };
           }
 
-          console.log(index);
-
           const updatedGameState = makeMove(gameState, index);
 
           GAME_MAP.set(gameId, updatedGameState);
@@ -150,6 +175,33 @@ if (process.env.NODE_ENV !== "test") {
 
           allSockets?.forEach((ws) => {
             ws.send(JSON.stringify({ gameId, ...updatedGameState }));
+          });
+          break;
+        }
+
+        case "chat": {
+          const { gameId, text } = req;
+
+          // Look up who this socket belongs to
+          const player = SOCKET_PLAYER_MAP.get(ws);
+
+          // Only allow X and O to chat (not spectators)
+          if (!player) {
+            return;
+          }
+
+          // Create the message
+          const message: ChatMessage = { player, text };
+
+          // Store in history
+          const history = CHAT_HISTORY.get(gameId) ?? [];
+          history.push(message);
+          CHAT_HISTORY.set(gameId, history);
+
+          // Broadcast to all sockets in this game
+          const allSockets = WS_MAP.get(gameId);
+          allSockets?.forEach((socket) => {
+            socket.send(JSON.stringify({ type: "chat", ...message }));
           });
           break;
         }
@@ -174,17 +226,38 @@ if (process.env.NODE_ENV !== "test") {
 
 /**
  * Handles the websocket adding to our 'DB', and url splitting
+ * Also assigns player identity (X, O, or spectator)
  * @param ws Websocket
  * @param req Websocket request URL
+ * @returns The gameId for this connection
  */
-function handleWebSocketRequest(ws: WebSocket, req: IncomingMessage): void {
+function handleWebSocketRequest(ws: WebSocket, req: IncomingMessage): UUID {
   const gameId: UUID = req.url!.split("/game/")[1] as UUID; // get the gameId
 
   // get existing Websocket array or init empty
   const existing = WS_MAP.get(gameId) ?? [];
 
+  // Assign player identity based on connection order
+  // First = X, Second = O, Third+ = spectator (undefined)
+  let playerIdentity: Player | undefined;
+  if (existing.length === 0) {
+    playerIdentity = "X";
+  } else if (existing.length === 1) {
+    playerIdentity = "O";
+  }
+  // else: spectator, stays undefined
+
+  SOCKET_PLAYER_MAP.set(ws, playerIdentity);
+
+  // Initialize chat history for this game if it doesn't exist
+  if (!CHAT_HISTORY.has(gameId)) {
+    CHAT_HISTORY.set(gameId, []);
+  }
+
   // TIL you can't do (WS_MAP.get(gameId) ?? [];).push(), as push returns the length of the array
 
   existing.push(ws); // add this connection
   WS_MAP.set(gameId, existing); // save back
+
+  return gameId;
 }

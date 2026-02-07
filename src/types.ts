@@ -32,3 +32,16 @@ export type IWebSocketMove = {
   gameId: UUID;
   index: number;
 };
+
+export type ChatMessage = {
+  player: Player;
+  text: string;
+};
+
+export type IWebSocketChat = {
+  type: "chat";
+  gameId: UUID;
+  text: string;
+};
+
+export type IWebSocketMessage = IWebSocketMove | IWebSocketChat;
