@@ -1,5 +1,5 @@
 import type { GameState } from "../types";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 interface ActiveGamesProps {
   activeGameIds: string[];
@@ -10,11 +10,11 @@ export function DisplayActiveGames({
   activeGameIds,
   activeGames,
 }: ActiveGamesProps) {
+  const location = useLocation();
+
   if (activeGames.length === 0) {
     return <div>No active games</div>;
   }
-
-  const location = useLocation();
 
   console.log(`store location ${location.pathname}`);
 
